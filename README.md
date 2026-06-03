@@ -1,134 +1,176 @@
-import streamlit as st
-import pandas as pd
-import pdfplumber
-import docx
-import re
-import spacy
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+# 📄 AI Resume Analyzer & ATS Scorer
 
-# Load NLP model
-try:
-    nlp = spacy.load("en_core_web_sm")
-except:
-    import os
-    os.system("python -m spacy download en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+An AI-powered Resume Analyzer built using Python, Streamlit, NLP, and Machine Learning. The application extracts key information from resumes, compares resumes against job descriptions, calculates ATS match scores, identifies missing skills, ranks candidates, and provides resume improvement suggestions.
 
-# --- UTILITY FUNCTIONS ---
+---
 
-def extract_text_from_pdf(file):
-    with pdfplumber.open(file) as pdf:
-        return "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+## 🚀 Features
 
-def extract_text_from_docx(file):
-    doc = docx.Document(file)
-    return "\n".join([para.text for para in doc.paragraphs])
+✅ Upload Resume (PDF/DOCX)
 
-def extract_contact_info(text):
-    email = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
-    phone = re.findall(r'[\+\d]?(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4})', text)
-    return (email[0] if email else "Not Found"), (phone[0] if phone else "Not Found")
+✅ Extract Candidate Information
+- Email
+- Phone Number
+- Education
+- Skills
 
-def extract_skills(text):
-    # Predefined common skills list (Expandable)
-    skill_db = [
-        "Python", "Java", "C++", "JavaScript", "SQL", "Tableau", "Power BI", "Excel",
-        "Machine Learning", "Data Analysis", "React", "Node.js", "Docker", "AWS",
-        "Project Management", "Leadership", "Communication", "Agile", "Scrum",
-        "Git", "TensorFlow", "PyTorch", "NLP", "Pandas", "NumPy", "Scikit-Learn"
-    ]
-    extracted = [skill for skill in skill_db if skill.lower() in text.lower()]
-    return list(set(extracted))
+✅ Resume vs Job Description Matching
 
-def extract_education(text):
-    edu_keywords = ["Bachelor", "Master", "B.Tech", "M.Tech", "B.E", "B.Sc", "MBA", "PhD", "University", "College"]
-    lines = text.split('\n')
-    education = [line.strip() for line in lines if any(kw.lower() in line.lower() for kw in edu_keywords)]
-    return list(set(education))[:3] # Return top 3 matches
+✅ ATS Match Score Calculation
 
-def get_ats_score(resume_text, jd_text):
-    documents = [resume_text, jd_text]
-    vectorizer = TfidfVectorizer().fit_transform(documents)
-    vectors = vectorizer.toarray()
-    return round(cosine_similarity(vectors)[0][1] * 100, 2)
+✅ Missing Skills Detection
 
-# --- UI COMPONENTS ---
+✅ Resume Improvement Suggestions
 
-st.set_page_config(page_title="AI Resume Analyzer", layout="wide")
+✅ Multiple Resume Ranking System
 
-st.title("📄 AI Resume Analyzer & ATS Scorer")
-st.markdown("Optimize your resume or rank multiple candidates with ease.")
+✅ Interactive Streamlit Dashboard
 
-tab1, tab2 = st.tabs(["Analyze Resume", "Resume Ranking (Batch)"])
+---
 
-with tab1:
-    st.header("Single Resume Analysis")
-    jd_input = st.text_area("Paste Job Description (JD) here:", height=200)
-    uploaded_file = st.file_uploader("Upload Resume", type=["pdf", "docx"])
+## 🛠️ Technologies Used
 
-    if st.button("Analyze") and uploaded_file and jd_input:
-        # Extract Text
-        if uploaded_file.name.endswith(".pdf"):
-            resume_text = extract_text_from_pdf(uploaded_file)
-        else:
-            resume_text = extract_text_from_docx(uploaded_file)
-        
-        # Extraction Logic
-        email, phone = extract_contact_info(resume_text)
-        skills = extract_skills(resume_text)
-        education = extract_education(resume_text)
-        ats_score = get_ats_score(resume_text, jd_input)
-        
-        # JD Skills (for missing skills check)
-        jd_skills = extract_skills(jd_input)
-        missing_skills = [s for s in jd_skills if s not in skills]
+- Python
+- Streamlit
+- Pandas
+- Scikit-Learn
+- SpaCy
+- PDFPlumber
+- Python-Docx
+- NLP
+- TF-IDF Vectorization
+- Cosine Similarity
 
-        # Display Results
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("Candidate Info")
-            st.write(f"**Email:** {email}")
-            st.write(f"**Phone:** {phone}")
-            st.write(f"**Education:** {', '.join(education) if education else 'Not detected'}")
-            
-        with col2:
-            st.subheader("ATS Match Score")
-            st.metric(label="Match Percentage", value=f"{ats_score}%")
-            if ats_score > 70:
-                st.success("High match! Your resume aligns well.")
-            else:
-                st.warning("Low match. Consider tailoring your resume.")
+---
 
-        st.subheader("Skills Analysis")
-        st.write(f"**Detected Skills:** {', '.join(skills)}")
-        if missing_skills:
-            st.error(f"**Missing Skills:** {', '.join(missing_skills)}")
-        else:
-            st.success("All JD-related skills found!")
+## 📂 Project Structure
 
-        st.subheader("Improvement Suggestions")
-        suggestions = []
-        if len(resume_text.split()) < 300: suggestions.append("Consider adding more detail; your resume is quite short.")
-        if not education: suggestions.append("Clearly state your educational background.")
-        if missing_skills: suggestions.append(f"Incorporate missing keywords: {', '.join(missing_skills[:3])}...")
-        
-        for s in suggestions:
-            st.info(f"💡 {s}")
+```text
+AI-Resume-Analyzer/
+│
+├── app.py
+├── requirements.txt
+└── README.md
+```
 
-with tab2:
-    st.header("Candidate Ranking System")
-    jd_batch = st.text_area("Job Description for Ranking:", height=150, key="batch_jd")
-    batch_files = st.file_uploader("Upload Multiple Resumes", type=["pdf", "docx"], accept_multiple_files=True)
+## ⚙️ Installation
 
-    if st.button("Rank Resumes") and batch_files and jd_batch:
-        results = []
-        for file in batch_files:
-            text = extract_text_from_pdf(file) if file.name.endswith(".pdf") else extract_text_from_docx(file)
-            score = get_ats_score(text, jd_batch)
-            email, _ = extract_contact_info(text)
-            results.append({"Candidate Name": file.name, "Email": email, "Match Score (%)": score})
-        
-        df = pd.DataFrame(results).sort_values(by="Match Score (%)", ascending=False)
-        st.table(df)
-        st.balloons()
+### Clone Repository
+
+```bash
+git clone https://github.com/your-username/AI-Resume-Analyzer.git
+cd AI-Resume-Analyzer
+```
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Download SpaCy Model
+
+```bash
+python -m spacy download en_core_web_sm
+```
+
+### Run Application
+
+```bash
+streamlit run app.py
+```
+
+---
+
+## 🧠 How It Works
+
+### Resume Parsing
+Extracts text from PDF and DOCX resumes using PDFPlumber and Python-Docx.
+
+### Information Extraction
+Automatically extracts:
+- Email Address
+- Phone Number
+- Education Details
+- Technical Skills
+
+### ATS Score Calculation
+Uses:
+- TF-IDF Vectorization
+- Cosine Similarity
+
+to compare the resume with the Job Description and generate a match score.
+
+### Skill Gap Analysis
+Identifies skills present in the Job Description but missing from the resume.
+
+### Resume Ranking
+Ranks multiple resumes based on ATS Match Score.
+
+---
+
+## 📊 Sample Output
+
+### Candidate Information
+
+```text
+Email: candidate@gmail.com
+Phone: 9876543210
+Education: B.Tech Computer Science
+```
+
+### ATS Score
+
+```text
+Match Score: 82%
+```
+
+### Detected Skills
+
+```text
+Python
+SQL
+Machine Learning
+NLP
+Git
+```
+
+### Missing Skills
+
+```text
+Docker
+AWS
+TensorFlow
+```
+
+### Suggestions
+
+```text
+Add missing technical skills.
+Include more project details.
+Improve keyword alignment with the job description.
+```
+
+---
+
+## 🔮 Future Enhancements
+
+- AI-based Resume Feedback using LLMs
+- Resume PDF Report Generation
+- Advanced Skill Extraction
+- Candidate Recommendation System
+- Resume Keyword Optimization
+
+---
+
+## 👩‍💻 Author
+
+**Anjali Upadhyay**  
+B.Tech Computer Science & Engineering  
+Galgotias University
+
+---
+
+## 📜 License
+
+This project is developed for educational and recruitment assessment purposes.
