@@ -1,8 +1,8 @@
-# 📄 AI Resume Analyzer & ATS Scorer
+# AI Resume Analyzer & ATS Scorer
 
-An AI-powered Resume Analyzer built using Python, Streamlit, NLP, and Machine Learning. The application extracts key information from resumes, compares resumes against job descriptions, calculates ATS match scores, identifies missing skills, ranks candidates, and provides resume improvement suggestions.
+## Live Demo
 
----
+[Click Here to Open App](https://ai-resume-analyzer-ats-scorer-9hdh8eappbqi8qqhzdxhxjz.streamlit.app)
 
 ## 🚀 Features
 
